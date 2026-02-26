@@ -276,13 +276,20 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
   @objc private func handleTranscriptButtonTap() {
     guard let currentItem = viewModel.currentItem else { return }
     
+    // If we're already showing the transcript, just toggle back
+    if isShowingTranscript {
+      toggleTranscriptView()
+      return
+    }
+    
+    // Check if transcript exists
     let hasTranscript = transcriptViewModel.hasTranscript(for: currentItem.relativePath)
     
     if !hasTranscript {
       // No transcript yet, show import dialog
       presentTranscriptImportOptions(for: currentItem.relativePath)
     } else {
-      // Toggle between artwork and transcript view
+      // Toggle to show transcript view
       toggleTranscriptView()
     }
   }
@@ -388,6 +395,9 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     ])
     
     hostingController.didMove(toParent: self)
+    
+    // Bring transcript button to front to ensure it's always visible and tappable
+    artworkControl.bringSubviewToFront(artworkControl.transcriptButton)
     
     // Animate transition
     UIView.transition(

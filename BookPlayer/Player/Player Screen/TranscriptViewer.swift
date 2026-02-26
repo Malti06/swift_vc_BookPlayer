@@ -88,40 +88,26 @@ struct TranscriptLineView: View {
   
   var body: some View {
     Button(action: onTap) {
-      HStack(alignment: .top, spacing: 12) {
-        // Timestamp
-        Text(formatTimestamp(line.timestamp))
-          .font(.system(.caption, design: .monospaced))
-          .foregroundColor(isActive ? .white : .secondary)
-          .frame(width: 60, alignment: .leading)
-        
-        // Text content
-        Text(line.text.isEmpty ? "♪" : line.text)
-          .font(.body)
-          .fontWeight(isActive ? .semibold : .regular)
-          .foregroundColor(isActive ? .white : .primary)
-          .multilineTextAlignment(.leading)
-          .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .padding(.vertical, 12)
-      .padding(.horizontal, 16)
-      .background(
-        RoundedRectangle(cornerRadius: 8)
-          .fill(isActive ? Color.accentColor : Color.clear)
-      )
-      .overlay(
-        RoundedRectangle(cornerRadius: 8)
-          .stroke(isActive ? Color.clear : Color.secondary.opacity(0.2), lineWidth: 1)
-      )
+      // Text content only (no timestamp)
+      Text(line.text.isEmpty ? "♪" : line.text)
+        .font(.body)
+        .fontWeight(isActive ? .semibold : .regular)
+        .foregroundColor(isActive ? .white : .primary)
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+          RoundedRectangle(cornerRadius: 8)
+            .fill(isActive ? Color.accentColor : Color.clear)
+        )
+        .overlay(
+          RoundedRectangle(cornerRadius: 8)
+            .stroke(isActive ? Color.clear : Color.secondary.opacity(0.2), lineWidth: 1)
+        )
     }
     .buttonStyle(PlainButtonStyle())
     .padding(.vertical, 2)
-  }
-  
-  private func formatTimestamp(_ time: TimeInterval) -> String {
-    let minutes = Int(time) / 60
-    let seconds = Int(time) % 60
-    return String(format: "%d:%02d", minutes, seconds)
   }
 }
 
