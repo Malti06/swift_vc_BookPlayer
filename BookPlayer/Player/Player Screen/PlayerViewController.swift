@@ -61,6 +61,7 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
   private var transcriptViewModel: TranscriptViewerViewModel!
   private var transcriptImporter: TranscriptImporter!
   private var isShowingTranscript = false
+  private var buttonStyleTimer: Timer?
 
   // computed properties
   override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -415,6 +416,9 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     buttonProtector.addGestureRecognizer(tapGesture)
     buttonProtector.isUserInteractionEnabled = true
     
+    // Ensure button styling before animation
+    ensureTranscriptButtonOnTop()
+    
     // Animate transition
     UIView.transition(
       with: artworkControl,
@@ -427,10 +431,34 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
         self.artworkControl.authorLabel.alpha = 0
       },
       completion: { _ in
-        // After animation, ensure button and protector are on top
+        // After animation, ensure button and protector are on top again
         self.ensureTranscriptButtonOnTop()
+        
+        // Add another delayed call to ensure styling persists
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+          self.ensureTranscriptButtonOnTop()
+        }
+        
+        // Start a timer to periodically ensure button stays styled and on top
+        self.startButtonStyleTimer()
       }
     )
+  }
+  
+  private func startButtonStyleTimer() {
+    // Invalidate any existing timer
+    buttonStyleTimer?.invalidate()
+    
+    // Create a timer that fires every 0.5 seconds to ensure button styling
+    buttonStyleTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+      guard let self = self, self.isShowingTranscript else { return }
+      self.ensureTranscriptButtonOnTop()
+    }
+  }
+  
+  private func stopButtonStyleTimer() {
+    buttonStyleTimer?.invalidate()
+    buttonStyleTimer = nil
   }
   
   private func ensureTranscriptButtonOnTop() {
@@ -442,16 +470,36 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
       artworkControl.bringSubviewToFront(protector)
     }
     
-    // Ensure button properties are set correctly
-    artworkControl.transcriptButton.isUserInteractionEnabled = true
-    artworkControl.transcriptButton.layer.zPosition = 1000
+    // Re-apply all button styling to ensure it's visible in text view
+    let button = artworkControl.transcriptButton!
     
-    // Make sure the button is not masked
-    artworkControl.transcriptButton.clipsToBounds = false
+    // Blue circular background
+    button.backgroundColor = UIColor.systemBlue
+    button.layer.cornerRadius = 20
+    
+    // Shadow for visibility
+    button.layer.shadowColor = UIColor.black.cgColor
+    button.layer.shadowOpacity = 0.3
+    button.layer.shadowRadius = 4.0
+    button.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
+    
+    // White icon
+    button.tintColor = .white
+    
+    // Z-positioning
+    button.layer.zPosition = 1000
+    button.isUserInteractionEnabled = true
+    button.clipsToBounds = false
+    
+    // Force the layer to render above everything
+    button.layer.masksToBounds = false
   }
   
   private func hideTranscriptView() {
     isShowingTranscript = false
+    
+    // Stop the button style timer
+    stopButtonStyleTimer()
     
     // Find and remove the hosting controller
     for child in children {
