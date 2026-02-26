@@ -17,6 +17,7 @@
                 <outlet property="backgroundGradientColorView" destination="s60-73-aQu" id="bXb-9d-64v"/>
                 <outlet property="contentView" destination="iN0-l3-epB" id="voY-pw-1zj"/>
                 <outlet property="infoContainerStackView" destination="OHB-pg-f5F" id="axm-gg-Kvh"/>
+                <outlet property="transcriptButton" destination="NP8-tx-btn" id="np8-out-btn"/>
                 <outlet property="titleLabel" destination="TYJ-3z-lYx" id="sL8-vv-hNo"/>
             </connections>
         </placeholder>
@@ -67,6 +68,16 @@
                         <constraint firstAttribute="height" constant="29" id="IH5-pz-sic"/>
                     </constraints>
                 </view>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NP8-tx-btn">
+                    <rect key="frame" x="12" y="12" width="40" height="40"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="40" id="NP8-w-btn"/>
+                        <constraint firstAttribute="height" constant="40" id="NP8-h-btn"/>
+                    </constraints>
+                    <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                    <state key="normal" image="doc.text" catalog="system"/>
+                </button>
             </subviews>
             <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
             <constraints>
@@ -88,9 +99,14 @@
                 <constraint firstItem="QW8-uv-3SO" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" constant="12" id="YWM-ZC-jh0"/>
                 <constraint firstItem="b1B-eO-wd8" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="hYE-K2-H9h"/>
                 <constraint firstItem="b1B-eO-wd8" firstAttribute="bottom" secondItem="vUN-kp-3ea" secondAttribute="bottom" id="tQQ-4L-F55"/>
+                <constraint firstItem="NP8-tx-btn" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="12" id="NP8-lead"/>
+                <constraint firstItem="NP8-tx-btn" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" constant="12" id="NP8-top"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <point key="canvasLocation" x="-20.5" y="-220.5"/>
         </view>
     </objects>
+    <resources>
+        <image name="doc.text" catalog="system" width="115" height="128"/>
+    </resources>
 </document>

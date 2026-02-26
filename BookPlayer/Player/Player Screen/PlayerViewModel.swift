@@ -113,6 +113,10 @@ class PlayerViewModel: ViewModelProtocol {
   func hasLoadedBook() -> Bool {
     return self.playerManager.hasLoadedBook()
   }
+  
+  var currentItem: PlayableItem? {
+    return self.playerManager.currentItem
+  }
 
   func hasChapter(before chapter: PlayableChapter?) -> Bool {
     guard let chapter = chapter else { return false }
@@ -625,5 +629,12 @@ extension PlayerViewModel {
 extension PlayerViewModel {
   func showButtonFree() {
     self.coordinator.showButtonFree()
+  }
+  
+  /// Seek to a specific timestamp (used for transcript line taps)
+  func handleSeekTo(_ timestamp: TimeInterval) {
+    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    self.playerManager.jumpTo(timestamp, recordBookmark: false)
+    sendEvent(.updateProgress(getCurrentProgressState()))
   }
 }

@@ -12,6 +12,7 @@ import BookPlayerKit
 import Combine
 import MediaPlayer
 import StoreKit
+import SwiftUI
 import Themeable
 import UIKit
 
@@ -55,6 +56,11 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
 
   /// Reference to displayed alert, to update the message label with the ongoing timer
   weak var sleepTimerAlert: UIAlertController?
+  
+  // Transcript viewer support
+  private var transcriptViewModel: TranscriptViewerViewModel!
+  private var transcriptImporter: TranscriptImporter!
+  private var isShowingTranscript = false
 
   // computed properties
   override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -67,6 +73,8 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     super.viewDidLoad()
 
     setup()
+    
+    setupTranscriptFeatures()
 
     setUpTheming()
 
@@ -175,6 +183,17 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     self.modalPresentationCapturesStatusBarAppearance = true
 
     self.setNeedsStatusBarAppearanceUpdate()
+    
+    // Update transcript button state
+    let hasTranscript = LRCService.shared.hasLRCFile(for: currentItem.relativePath)
+    self.artworkControl.updateTranscriptButtonVisibility(hasTranscript: hasTranscript)
+    
+    // Load transcript if available
+    if hasTranscript {
+      transcriptViewModel.loadTranscript(for: currentItem.relativePath)
+    } else {
+      transcriptViewModel.clearTranscript()
+    }
   }
 
   func updateView(with progressObject: ProgressObject, shouldSetSliderValue: Bool = true) {
@@ -233,6 +252,215 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
 
     self.previousChapterButton.setImage(leftChevron, for: .normal)
     self.nextChapterButton.setImage(rightChevron, for: .normal)
+    
+    // Update transcript time if showing
+    if isShowingTranscript {
+      transcriptViewModel.updateCurrentTime(progressObject.currentTime)
+    }
+  }
+  
+  // MARK: - Transcript Features
+  
+  func setupTranscriptFeatures() {
+    transcriptViewModel = TranscriptViewerViewModel()
+    transcriptImporter = TranscriptImporter(presentingViewController: self)
+    
+    // Add tap handler to transcript button
+    artworkControl.transcriptButton.addTarget(
+      self,
+      action: #selector(handleTranscriptButtonTap),
+      for: .touchUpInside
+    )
+  }
+  
+  @objc private func handleTranscriptButtonTap() {
+    guard let currentItem = viewModel.currentItem else { return }
+    
+    let hasTranscript = transcriptViewModel.hasTranscript(for: currentItem.relativePath)
+    
+    if !hasTranscript {
+      // No transcript yet, show import dialog
+      presentTranscriptImportOptions(for: currentItem.relativePath)
+    } else {
+      // Toggle between artwork and transcript view
+      toggleTranscriptView()
+    }
+  }
+  
+  private func presentTranscriptImportOptions(for relativePath: String) {
+    let alert = UIAlertController(
+      title: "Import Transcript",
+      message: "Import an .lrc file to enable synchronized text viewing",
+      preferredStyle: .actionSheet
+    )
+    
+    alert.addAction(
+      UIAlertAction(
+        title: "Choose File",
+        style: .default,
+        handler: { [weak self] _ in
+          self?.importTranscriptFile(for: relativePath)
+        }
+      )
+    )
+    
+    alert.addAction(
+      UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+    )
+    
+    if let popoverController = alert.popoverPresentationController {
+      popoverController.sourceView = artworkControl.transcriptButton
+      popoverController.sourceRect = artworkControl.transcriptButton.bounds
+    }
+    
+    present(alert, animated: true)
+  }
+  
+  private func importTranscriptFile(for relativePath: String) {
+    transcriptImporter.importTranscript(for: relativePath) { [weak self] result in
+      guard let self = self else { return }
+      
+      switch result {
+      case .success:
+        // Load the transcript and show it
+        self.transcriptViewModel.loadTranscript(for: relativePath)
+        self.artworkControl.updateTranscriptButtonVisibility(hasTranscript: true)
+        self.toggleTranscriptView()
+        
+        // Show success message
+        self.showTranscriptImportSuccess()
+        
+      case .failure(let error):
+        // Handle cancelled state silently
+        if case TranscriptImporterError.cancelled = error {
+          return
+        }
+        
+        // Show error alert for other failures
+        self.showTranscriptImportError(error)
+      }
+    }
+  }
+  
+  private func toggleTranscriptView() {
+    guard let currentItem = viewModel.currentItem else { return }
+    
+    if !isShowingTranscript {
+      // Load transcript if not already loaded
+      if !transcriptViewModel.hasTranscript {
+        transcriptViewModel.loadTranscript(for: currentItem.relativePath)
+      }
+      
+      // Show transcript view
+      showTranscriptView()
+    } else {
+      // Show artwork view
+      hideTranscriptView()
+    }
+  }
+  
+  private func showTranscriptView() {
+    isShowingTranscript = true
+    
+    // Create and configure SwiftUI hosting controller
+    let transcriptView = TranscriptViewer(
+      viewModel: transcriptViewModel,
+      onLineTap: { [weak self] timestamp in
+        self?.viewModel.handleSeekTo(timestamp)
+      }
+    )
+    
+    let hostingController = UIHostingController(rootView: transcriptView)
+    hostingController.view.backgroundColor = .clear
+    
+    // Add as child view controller
+    addChild(hostingController)
+    artworkControl.addSubview(hostingController.view)
+    
+    hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    hostingController.view.alpha = 0
+    
+    NSLayoutConstraint.activate([
+      hostingController.view.topAnchor.constraint(equalTo: artworkControl.topAnchor),
+      hostingController.view.leadingAnchor.constraint(equalTo: artworkControl.leadingAnchor),
+      hostingController.view.trailingAnchor.constraint(equalTo: artworkControl.trailingAnchor),
+      hostingController.view.bottomAnchor.constraint(equalTo: artworkControl.bottomAnchor)
+    ])
+    
+    hostingController.didMove(toParent: self)
+    
+    // Animate transition
+    UIView.transition(
+      with: artworkControl,
+      duration: 0.4,
+      options: .transitionFlipFromLeft,
+      animations: {
+        hostingController.view.alpha = 1
+        self.artworkControl.artworkImage.alpha = 0
+        self.artworkControl.titleLabel.alpha = 0
+        self.artworkControl.authorLabel.alpha = 0
+      }
+    )
+  }
+  
+  private func hideTranscriptView() {
+    isShowingTranscript = false
+    
+    // Find and remove the hosting controller
+    for child in children {
+      if child is UIHostingController<TranscriptViewer> {
+        // Animate transition
+        UIView.transition(
+          with: artworkControl,
+          duration: 0.4,
+          options: .transitionFlipFromRight,
+          animations: {
+            child.view.alpha = 0
+            self.artworkControl.artworkImage.alpha = 1
+            self.artworkControl.titleLabel.alpha = 1
+            self.artworkControl.authorLabel.alpha = 1
+          },
+          completion: { _ in
+            child.willMove(toParent: nil)
+            child.view.removeFromSuperview()
+            child.removeFromParent()
+          }
+        )
+        break
+      }
+    }
+  }
+  
+  private func showTranscriptImportSuccess() {
+    let alert = UIAlertController(
+      title: "Success",
+      message: "Transcript imported successfully",
+      preferredStyle: .alert
+    )
+    
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    present(alert, animated: true)
+  }
+  
+  private func showTranscriptImportError(_ error: Error) {
+    let message: String
+    
+    if let lrcError = error as? LRCParserError {
+      message = lrcError.errorDescription ?? "Failed to parse transcript file"
+    } else if let importError = error as? TranscriptImporterError {
+      message = importError.errorDescription ?? "Failed to import transcript"
+    } else {
+      message = error.localizedDescription
+    }
+    
+    let alert = UIAlertController(
+      title: "Import Failed",
+      message: message,
+      preferredStyle: .alert
+    )
+    
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    present(alert, animated: true)
   }
 }
 

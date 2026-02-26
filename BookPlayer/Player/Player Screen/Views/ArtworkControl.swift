@@ -21,6 +21,7 @@ class ArtworkControl: UIView, UIGestureRecognizerDelegate {
   @IBOutlet weak var titleLabel: UILabel!
   @IBOutlet weak var infoContainerStackView: UIStackView!
   @IBOutlet weak var airplayView: UIView!
+  @IBOutlet weak var transcriptButton: UIButton!
 
   private var leftGradientLayer = CAGradientLayer()
   private var rightGradientLayer = CAGradientLayer()
@@ -110,6 +111,7 @@ class ArtworkControl: UIView, UIGestureRecognizerDelegate {
     self.backgroundGradientColorView.layer.masksToBounds = true
     self.backgroundGradientColorView.layer.borderColor = UIColor.clear.cgColor
     self.setupAirplayView()
+    self.setupTranscriptButton()
 
     let size = UIDevice.current.userInterfaceIdiom == .phone
     ? bounds.size
@@ -158,6 +160,23 @@ class ArtworkControl: UIView, UIGestureRecognizerDelegate {
     self.airplayView.isAccessibilityElement = true
     self.airplayView.accessibilityLabel = "audio_source_title".localized
   }
+  
+  private func setupTranscriptButton() {
+    // Configure transcript button appearance
+    transcriptButton.layer.shadowColor = UIColor.black.cgColor
+    transcriptButton.layer.shadowOpacity = 1
+    transcriptButton.layer.shadowRadius = 3.0
+    transcriptButton.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
+    
+    // Set up image with proper size
+    let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+    let image = UIImage(systemName: "doc.text", withConfiguration: config)
+    transcriptButton.setImage(image, for: .normal)
+    transcriptButton.tintColor = .white
+    
+    transcriptButton.isAccessibilityElement = true
+    transcriptButton.accessibilityLabel = "Toggle Transcript"
+  }
 
   public func setupInfo(
     with title: String,
@@ -188,6 +207,17 @@ class ArtworkControl: UIView, UIGestureRecognizerDelegate {
         }
       }
     )
+  }
+  
+  public func updateTranscriptButtonVisibility(hasTranscript: Bool) {
+    // Always show the button, but we could change the icon based on state
+    transcriptButton.isHidden = false
+    
+    // Update icon based on whether transcript exists
+    let iconName = hasTranscript ? "doc.text.fill" : "doc.text"
+    let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+    let image = UIImage(systemName: iconName, withConfiguration: config)
+    transcriptButton.setImage(image, for: .normal)
   }
 }
 
