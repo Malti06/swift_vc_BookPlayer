@@ -18,6 +18,11 @@
 		14A7469E2F50826B009FB5BB /* TranscriptViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A7469D2F50826B009FB5BB /* TranscriptViewer.swift */; };
 		14A746A02F50827B009FB5BB /* ArtworkTranscriptContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A7469F2F50827B009FB5BB /* ArtworkTranscriptContainer.swift */; };
 		14A746A22F50829C009FB5BB /* TranscriptImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A746A12F50829C009FB5BB /* TranscriptImporter.swift */; };
+		14A746A42F50D95E009FB5BB /* LRCParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A746A32F50D95E009FB5BB /* LRCParserTests.swift */; };
+		14A746A62F50D997009FB5BB /* LRCServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A746A52F50D997009FB5BB /* LRCServiceTests.swift */; };
+		14A746A82F50D9CD009FB5BB /* TranscriptImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A746A72F50D9CD009FB5BB /* TranscriptImporterTests.swift */; };
+		14A746AA2F50DA07009FB5BB /* TranscriptViewerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A746A92F50DA07009FB5BB /* TranscriptViewerViewModelTests.swift */; };
+		14A746AC2F50DA4C009FB5BB /* TranscriptFeatureUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A746AB2F50DA4C009FB5BB /* TranscriptFeatureUITests.swift */; };
 		3F66408A2E162ABF00356522 /* AudioMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6640892E162ABF00356522 /* AudioMetadataService.swift */; };
 		3F66408B2E162ABF00356522 /* AudioMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F6640892E162ABF00356522 /* AudioMetadataService.swift */; };
 		3F66408D2E172DF500356522 /* MappingModel_v9_to_v10.xcmappingmodel in Sources */ = {isa = PBXBuildFile; fileRef = 3F66408C2E172DF500356522 /* MappingModel_v9_to_v10.xcmappingmodel */; };
@@ -988,6 +993,11 @@
 		14A7469D2F50826B009FB5BB /* TranscriptViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptViewer.swift; sourceTree = "<group>"; };
 		14A7469F2F50827B009FB5BB /* ArtworkTranscriptContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkTranscriptContainer.swift; sourceTree = "<group>"; };
 		14A746A12F50829C009FB5BB /* TranscriptImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptImporter.swift; sourceTree = "<group>"; };
+		14A746A32F50D95E009FB5BB /* LRCParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCParserTests.swift; sourceTree = "<group>"; };
+		14A746A52F50D997009FB5BB /* LRCServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LRCServiceTests.swift; sourceTree = "<group>"; };
+		14A746A72F50D9CD009FB5BB /* TranscriptImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptImporterTests.swift; sourceTree = "<group>"; };
+		14A746A92F50DA07009FB5BB /* TranscriptViewerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptViewerViewModelTests.swift; sourceTree = "<group>"; };
+		14A746AB2F50DA4C009FB5BB /* TranscriptFeatureUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptFeatureUITests.swift; sourceTree = "<group>"; };
 		3373A34FC2536111E50BF868 /* PasskeyEmailInputView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PasskeyEmailInputView.swift; sourceTree = "<group>"; };
 		3ACFA02FA31A0CB0438C5228 /* BPFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPFont.swift; sourceTree = "<group>"; };
 		3F6640892E162ABF00356522 /* AudioMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMetadataService.swift; sourceTree = "<group>"; };
@@ -2166,6 +2176,8 @@
 				9FB7C48C2835A2C1003B917E /* PlayerManagerTests.swift */,
 				6279361D272D0CF50097837D /* Coordinators */,
 				418B6D141D2707F800F974FB /* Info.plist */,
+				14A746A92F50DA07009FB5BB /* TranscriptViewerViewModelTests.swift */,
+				14A746AB2F50DA4C009FB5BB /* TranscriptFeatureUITests.swift */,
 			);
 			path = BookPlayerTests;
 			sourceTree = "<group>";
@@ -3017,6 +3029,9 @@
 				62AAE230274ABB5D001EB9FF /* LibraryServiceTests.swift */,
 				9FC1E4662815091A00522FA8 /* AccountServiceTests.swift */,
 				9FC1E4762815F97E00522FA8 /* KeychainServiceTests.swift */,
+				14A746A32F50D95E009FB5BB /* LRCParserTests.swift */,
+				14A746A52F50D997009FB5BB /* LRCServiceTests.swift */,
+				14A746A72F50D9CD009FB5BB /* TranscriptImporterTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -4600,10 +4615,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				14A746AC2F50DA4C009FB5BB /* TranscriptFeatureUITests.swift in Sources */,
 				9F1C30FC2A2E593300D5BC81 /* PlayableItemMock.swift in Sources */,
 				69343D36213A07B4000C425E /* VoiceOverServiceTest.swift in Sources */,
+				14A746A62F50D997009FB5BB /* LRCServiceTests.swift in Sources */,
 				8AAA4F4C2CF1FF8C009D0777 /* MockCoordinatorPresentationFlow.swift in Sources */,
 				41A1B13F226FEF9300EA0400 /* DataManagerTests.swift in Sources */,
+				14A746A42F50D95E009FB5BB /* LRCParserTests.swift in Sources */,
 				9FB7C48D2835A2C1003B917E /* PlayerManagerTests.swift in Sources */,
 				8AF18A3B2CF0E92F00238F8D /* KeychainServiceMock.swift in Sources */,
 				9F7C47532A2C15D300F9A500 /* AutoMockable.generated.swift in Sources */,
@@ -4613,12 +4631,14 @@
 				9F5011F72A620D140075FEBA /* PlayerViewModelTests.swift in Sources */,
 				9FC1E4632814F80000522FA8 /* AccountServiceMock.swift in Sources */,
 				9FC1E4672815091A00522FA8 /* AccountServiceTests.swift in Sources */,
+				14A746A82F50D9CD009FB5BB /* TranscriptImporterTests.swift in Sources */,
 				9FC1E4772815F97E00522FA8 /* KeychainServiceTests.swift in Sources */,
 				63432B592AC1E6F7002619D0 /* MockNavigationController.swift in Sources */,
 				4137BBD0272DEBEC009ED9FE /* LoadingCoordinatorTests.swift in Sources */,
 				41A1B13E226FEF8000EA0400 /* DataTestUtils.swift in Sources */,
 				63833DFA2AAC139700496246 /* PlaybackPerformanceTests.swift in Sources */,
 				9FC1E46928150ECC00522FA8 /* NetworkClientMock.swift in Sources */,
+				14A746AA2F50DA07009FB5BB /* TranscriptViewerViewModelTests.swift in Sources */,
 				9F8A9A5E27AC3F8C0093AA1C /* PlayableItemTests.swift in Sources */,
 				4163E313214AC43000072AA2 /* ImportOperationTests.swift in Sources */,
 			);
