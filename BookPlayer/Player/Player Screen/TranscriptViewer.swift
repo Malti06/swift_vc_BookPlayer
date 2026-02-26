@@ -45,7 +45,8 @@ struct TranscriptViewer: View {
               }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.top, 60)  // Add top padding to avoid button area
+            .padding(.bottom, 16)
           }
           .onChange(of: viewModel.currentLineIndex) { newIndex in
             guard let newIndex = newIndex,
@@ -57,6 +58,7 @@ struct TranscriptViewer: View {
             }
           }
         }
+        .allowsHitTesting(true)  // Enable hit testing for the scroll view
       } else {
         // Empty state
         VStack(spacing: 16) {

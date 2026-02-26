@@ -162,17 +162,26 @@ class ArtworkControl: UIView, UIGestureRecognizerDelegate {
   }
   
   private func setupTranscriptButton() {
-    // Configure transcript button appearance
+    // Make it round with blue background
+    transcriptButton.layer.cornerRadius = 20 // 40x40 button / 2 = 20 radius
+    transcriptButton.backgroundColor = UIColor.systemBlue
+    transcriptButton.clipsToBounds = false
+    
+    // Add shadow for depth
     transcriptButton.layer.shadowColor = UIColor.black.cgColor
-    transcriptButton.layer.shadowOpacity = 1
-    transcriptButton.layer.shadowRadius = 3.0
+    transcriptButton.layer.shadowOpacity = 0.3
+    transcriptButton.layer.shadowRadius = 4.0
     transcriptButton.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
     
     // Set up image with proper size
-    let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+    let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
     let image = UIImage(systemName: "doc.text", withConfiguration: config)
     transcriptButton.setImage(image, for: .normal)
     transcriptButton.tintColor = .white
+    
+    // Ensure button is always interactive and on top
+    transcriptButton.isUserInteractionEnabled = true
+    transcriptButton.layer.zPosition = 1000
     
     transcriptButton.isAccessibilityElement = true
     transcriptButton.accessibilityLabel = "Toggle Transcript"
@@ -215,9 +224,14 @@ class ArtworkControl: UIView, UIGestureRecognizerDelegate {
     
     // Update icon based on whether transcript exists
     let iconName = hasTranscript ? "doc.text.fill" : "doc.text"
-    let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+    let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
     let image = UIImage(systemName: iconName, withConfiguration: config)
     transcriptButton.setImage(image, for: .normal)
+    
+    // Ensure blue background and properties are maintained
+    transcriptButton.backgroundColor = UIColor.systemBlue
+    transcriptButton.tintColor = .white
+    transcriptButton.layer.zPosition = 1000
   }
 }
 

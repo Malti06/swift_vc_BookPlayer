@@ -396,8 +396,24 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     
     hostingController.didMove(toParent: self)
     
-    // Bring transcript button to front to ensure it's always visible and tappable
-    artworkControl.bringSubviewToFront(artworkControl.transcriptButton)
+    // Create an invisible tap interceptor view over the button area
+    let buttonProtector = UIView()
+    buttonProtector.backgroundColor = .clear
+    buttonProtector.tag = 9999 // Tag to find it later
+    artworkControl.addSubview(buttonProtector)
+    
+    buttonProtector.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      buttonProtector.leadingAnchor.constraint(equalTo: artworkControl.transcriptButton.leadingAnchor, constant: -8),
+      buttonProtector.trailingAnchor.constraint(equalTo: artworkControl.transcriptButton.trailingAnchor, constant: 8),
+      buttonProtector.topAnchor.constraint(equalTo: artworkControl.transcriptButton.topAnchor, constant: -8),
+      buttonProtector.bottomAnchor.constraint(equalTo: artworkControl.transcriptButton.bottomAnchor, constant: 8)
+    ])
+    
+    // Add tap gesture to forward to the button
+    let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTranscriptButtonTap))
+    buttonProtector.addGestureRecognizer(tapGesture)
+    buttonProtector.isUserInteractionEnabled = true
     
     // Animate transition
     UIView.transition(
@@ -409,8 +425,29 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
         self.artworkControl.artworkImage.alpha = 0
         self.artworkControl.titleLabel.alpha = 0
         self.artworkControl.authorLabel.alpha = 0
+      },
+      completion: { _ in
+        // After animation, ensure button and protector are on top
+        self.ensureTranscriptButtonOnTop()
       }
     )
+  }
+  
+  private func ensureTranscriptButtonOnTop() {
+    // Bring transcript button to front to ensure it's always visible and tappable
+    artworkControl.bringSubviewToFront(artworkControl.transcriptButton)
+    
+    // Bring the button protector to front as well
+    if let protector = artworkControl.viewWithTag(9999) {
+      artworkControl.bringSubviewToFront(protector)
+    }
+    
+    // Ensure button properties are set correctly
+    artworkControl.transcriptButton.isUserInteractionEnabled = true
+    artworkControl.transcriptButton.layer.zPosition = 1000
+    
+    // Make sure the button is not masked
+    artworkControl.transcriptButton.clipsToBounds = false
   }
   
   private func hideTranscriptView() {
@@ -434,6 +471,11 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
             child.willMove(toParent: nil)
             child.view.removeFromSuperview()
             child.removeFromParent()
+            
+            // Remove the button protector view
+            if let protector = self.artworkControl.viewWithTag(9999) {
+              protector.removeFromSuperview()
+            }
           }
         )
         break
