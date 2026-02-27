@@ -44,6 +44,7 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
   @IBOutlet weak var containerPlayerControlsStackView: UIStackView!
   @IBOutlet weak var containerChapterControlsStackView: UIStackView!
   @IBOutlet weak var containerProgressControlsStackView: UIStackView!
+  @IBOutlet weak var lyricsButton: UIButton!
   private var themedStatusBarStyle: UIStatusBarStyle?
   private var panGestureRecognizer: UIPanGestureRecognizer!
   private let dismissThreshold: CGFloat = 44.0 * UIScreen.main.nativeScale
@@ -62,6 +63,12 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
   private var transcriptImporter: TranscriptImporter!
   private var isShowingTranscript = false
   private var buttonStyleTimer: Timer?
+  
+  // Lyrics viewer support
+  private var lyricsViewModel: TranscriptViewerViewModel!
+  private var lyricsImporter: TranscriptImporter!
+  private var isShowingLyrics = false
+  private var lyricsButtonStyleTimer: Timer?
 
   // computed properties
   override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -76,6 +83,7 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     setup()
     
     setupTranscriptFeatures()
+    setupLyricsFeatures()
 
     setUpTheming()
 
@@ -195,6 +203,17 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     } else {
       transcriptViewModel.clearTranscript()
     }
+    
+    // Update lyrics button state
+    let hasLyrics = LRCService.shared.hasLRCFile(for: currentItem.relativePath)
+    self.updateLyricsButtonVisibility(hasLyrics: hasLyrics)
+    
+    // Load lyrics if available
+    if hasLyrics {
+      lyricsViewModel.loadTranscript(for: currentItem.relativePath)
+    } else {
+      lyricsViewModel.clearTranscript()
+    }
   }
 
   func updateView(with progressObject: ProgressObject, shouldSetSliderValue: Bool = true) {
@@ -257,6 +276,11 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
     // Update transcript time if showing
     if isShowingTranscript {
       transcriptViewModel.updateCurrentTime(progressObject.currentTime)
+    }
+    
+    // Update lyrics time if showing
+    if isShowingLyrics {
+      lyricsViewModel.updateCurrentTime(progressObject.currentTime)
     }
   }
   
@@ -549,6 +573,354 @@ class PlayerViewController: UIViewController, MVVMControllerProtocol, Storyboard
       message = lrcError.errorDescription ?? "Failed to parse transcript file"
     } else if let importError = error as? TranscriptImporterError {
       message = importError.errorDescription ?? "Failed to import transcript"
+    } else {
+      message = error.localizedDescription
+    }
+    
+    let alert = UIAlertController(
+      title: "Import Failed",
+      message: message,
+      preferredStyle: .alert
+    )
+    
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    present(alert, animated: true)
+  }
+  
+  // MARK: - Lyrics Features
+  
+  func setupLyricsFeatures() {
+    lyricsViewModel = TranscriptViewerViewModel()
+    lyricsImporter = TranscriptImporter(presentingViewController: self)
+    
+    // Setup lyrics button appearance
+    setupLyricsButton()
+    
+    // Add tap handler to lyrics button
+    lyricsButton.addTarget(
+      self,
+      action: #selector(handleLyricsButtonTap),
+      for: .touchUpInside
+    )
+  }
+  
+  private func setupLyricsButton() {
+    // Make it round with blue background
+    lyricsButton.layer.cornerRadius = 20 // 40x40 button / 2 = 20 radius
+    lyricsButton.backgroundColor = UIColor.systemBlue
+    lyricsButton.clipsToBounds = false
+    
+    // Add shadow for depth
+    lyricsButton.layer.shadowColor = UIColor.black.cgColor
+    lyricsButton.layer.shadowOpacity = 0.3
+    lyricsButton.layer.shadowRadius = 4.0
+    lyricsButton.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
+    
+    // Set up image with proper size
+    let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+    let image = UIImage(systemName: "music.note.list", withConfiguration: config)
+    lyricsButton.setImage(image, for: .normal)
+    lyricsButton.tintColor = .white
+    
+    // Ensure button is always interactive and on top
+    lyricsButton.isUserInteractionEnabled = true
+    lyricsButton.layer.zPosition = 1000
+    
+    lyricsButton.isAccessibilityElement = true
+    lyricsButton.accessibilityLabel = "Toggle Lyrics"
+  }
+  
+  private func updateLyricsButtonVisibility(hasLyrics: Bool) {
+    // Always show the button, but we could change the icon based on state
+    lyricsButton.isHidden = false
+    
+    // Update icon based on whether lyrics exists
+    let iconName = hasLyrics ? "music.note.list" : "music.note.list"
+    let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+    let image = UIImage(systemName: iconName, withConfiguration: config)
+    lyricsButton.setImage(image, for: .normal)
+    
+    // Ensure blue background and properties are maintained
+    lyricsButton.backgroundColor = UIColor.systemBlue
+    lyricsButton.tintColor = .white
+    lyricsButton.layer.zPosition = 1000
+  }
+  
+  @objc private func handleLyricsButtonTap() {
+    guard let currentItem = viewModel.currentItem else { return }
+    
+    // If we're already showing the lyrics, just toggle back
+    if isShowingLyrics {
+      toggleLyricsView()
+      return
+    }
+    
+    // Check if lyrics exists
+    let hasLyrics = lyricsViewModel.hasTranscript(for: currentItem.relativePath)
+    
+    if !hasLyrics {
+      // No lyrics yet, show import dialog
+      presentLyricsImportOptions(for: currentItem.relativePath)
+    } else {
+      // Toggle to show lyrics view
+      toggleLyricsView()
+    }
+  }
+  
+  private func presentLyricsImportOptions(for relativePath: String) {
+    let alert = UIAlertController(
+      title: "Import Lyrics",
+      message: "Import an .lrc file to enable synchronized lyrics viewing",
+      preferredStyle: .actionSheet
+    )
+    
+    alert.addAction(
+      UIAlertAction(
+        title: "Choose File",
+        style: .default,
+        handler: { [weak self] _ in
+          self?.importLyricsFile(for: relativePath)
+        }
+      )
+    )
+    
+    alert.addAction(
+      UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+    )
+    
+    if let popoverController = alert.popoverPresentationController {
+      popoverController.sourceView = lyricsButton
+      popoverController.sourceRect = lyricsButton.bounds
+    }
+    
+    present(alert, animated: true)
+  }
+  
+  private func importLyricsFile(for relativePath: String) {
+    lyricsImporter.importTranscript(for: relativePath) { [weak self] result in
+      guard let self = self else { return }
+      
+      switch result {
+      case .success:
+        // Load the lyrics and show it
+        self.lyricsViewModel.loadTranscript(for: relativePath)
+        self.updateLyricsButtonVisibility(hasLyrics: true)
+        self.toggleLyricsView()
+        
+        // Show success message
+        self.showLyricsImportSuccess()
+        
+      case .failure(let error):
+        // Handle cancelled state silently
+        if case TranscriptImporterError.cancelled = error {
+          return
+        }
+        
+        // Show error alert for other failures
+        self.showLyricsImportError(error)
+      }
+    }
+  }
+  
+  private func toggleLyricsView() {
+    guard let currentItem = viewModel.currentItem else { return }
+    
+    if !isShowingLyrics {
+      // Load lyrics if not already loaded
+      if !lyricsViewModel.hasTranscript {
+        lyricsViewModel.loadTranscript(for: currentItem.relativePath)
+      }
+      
+      // Show lyrics view
+      showLyricsView()
+    } else {
+      // Show artwork view
+      hideLyricsView()
+    }
+  }
+  
+  private func showLyricsView() {
+    isShowingLyrics = true
+    
+    // Create and configure SwiftUI hosting controller
+    let lyricsView = TranscriptViewer(
+      viewModel: lyricsViewModel,
+      onLineTap: { [weak self] timestamp in
+        self?.viewModel.handleSeekTo(timestamp)
+      }
+    )
+    
+    let hostingController = UIHostingController(rootView: lyricsView)
+    hostingController.view.backgroundColor = .clear
+    
+    // Add as child view controller
+    addChild(hostingController)
+    artworkControl.addSubview(hostingController.view)
+    
+    hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    hostingController.view.alpha = 0
+    
+    NSLayoutConstraint.activate([
+      hostingController.view.topAnchor.constraint(equalTo: artworkControl.topAnchor),
+      hostingController.view.leadingAnchor.constraint(equalTo: artworkControl.leadingAnchor),
+      hostingController.view.trailingAnchor.constraint(equalTo: artworkControl.trailingAnchor),
+      hostingController.view.bottomAnchor.constraint(equalTo: artworkControl.bottomAnchor)
+    ])
+    
+    hostingController.didMove(toParent: self)
+    
+    // Create an invisible tap interceptor view over the button area
+    let buttonProtector = UIView()
+    buttonProtector.backgroundColor = .clear
+    buttonProtector.tag = 9998 // Different tag from transcript (9999)
+    artworkControl.addSubview(buttonProtector)
+    
+    buttonProtector.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      buttonProtector.leadingAnchor.constraint(equalTo: lyricsButton.leadingAnchor, constant: -8),
+      buttonProtector.trailingAnchor.constraint(equalTo: lyricsButton.trailingAnchor, constant: 8),
+      buttonProtector.topAnchor.constraint(equalTo: lyricsButton.topAnchor, constant: -8),
+      buttonProtector.bottomAnchor.constraint(equalTo: lyricsButton.bottomAnchor, constant: 8)
+    ])
+    
+    // Add tap gesture to forward to the button
+    let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleLyricsButtonTap))
+    buttonProtector.addGestureRecognizer(tapGesture)
+    buttonProtector.isUserInteractionEnabled = true
+    
+    // Ensure button styling before animation
+    ensureLyricsButtonOnTop()
+    
+    // Animate transition
+    UIView.transition(
+      with: artworkControl,
+      duration: 0.4,
+      options: .transitionFlipFromLeft,
+      animations: {
+        hostingController.view.alpha = 1
+        self.artworkControl.artworkImage.alpha = 0
+        self.artworkControl.titleLabel.alpha = 0
+        self.artworkControl.authorLabel.alpha = 0
+      },
+      completion: { _ in
+        // After animation, ensure button and protector are on top again
+        self.ensureLyricsButtonOnTop()
+        
+        // Add another delayed call to ensure styling persists
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+          self.ensureLyricsButtonOnTop()
+        }
+        
+        // Start a timer to periodically ensure button stays styled and on top
+        self.startLyricsButtonStyleTimer()
+      }
+    )
+  }
+  
+  private func startLyricsButtonStyleTimer() {
+    // Invalidate any existing timer
+    lyricsButtonStyleTimer?.invalidate()
+    
+    // Create a timer that fires every 0.5 seconds to ensure button styling
+    lyricsButtonStyleTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+      guard let self = self, self.isShowingLyrics else { return }
+      self.ensureLyricsButtonOnTop()
+    }
+  }
+  
+  private func stopLyricsButtonStyleTimer() {
+    lyricsButtonStyleTimer?.invalidate()
+    lyricsButtonStyleTimer = nil
+  }
+  
+  private func ensureLyricsButtonOnTop() {
+    // Bring lyrics button to front to ensure it's always visible and tappable
+    artworkControl.bringSubviewToFront(lyricsButton)
+    
+    // Bring the button protector to front as well
+    if let protector = artworkControl.viewWithTag(9998) {
+      artworkControl.bringSubviewToFront(protector)
+    }
+    
+    // Re-apply all button styling to ensure it's visible in text view
+    let button = lyricsButton!
+    
+    // Blue circular background
+    button.backgroundColor = UIColor.systemBlue
+    button.layer.cornerRadius = 20
+    
+    // Shadow for visibility
+    button.layer.shadowColor = UIColor.black.cgColor
+    button.layer.shadowOpacity = 0.3
+    button.layer.shadowRadius = 4.0
+    button.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
+    
+    // White icon
+    button.tintColor = .white
+    
+    // Z-positioning
+    button.layer.zPosition = 1000
+    button.isUserInteractionEnabled = true
+    button.clipsToBounds = false
+    
+    // Force the layer to render above everything
+    button.layer.masksToBounds = false
+  }
+  
+  private func hideLyricsView() {
+    isShowingLyrics = false
+    
+    // Stop the button style timer
+    stopLyricsButtonStyleTimer()
+    
+    // Find and remove the hosting controller
+    for child in children {
+      if child is UIHostingController<TranscriptViewer> {
+        // Animate transition
+        UIView.transition(
+          with: artworkControl,
+          duration: 0.4,
+          options: .transitionFlipFromRight,
+          animations: {
+            child.view.alpha = 0
+            self.artworkControl.artworkImage.alpha = 1
+            self.artworkControl.titleLabel.alpha = 1
+            self.artworkControl.authorLabel.alpha = 1
+          },
+          completion: { _ in
+            child.willMove(toParent: nil)
+            child.view.removeFromSuperview()
+            child.removeFromParent()
+            
+            // Remove the button protector view
+            if let protector = self.artworkControl.viewWithTag(9998) {
+              protector.removeFromSuperview()
+            }
+          }
+        )
+        break
+      }
+    }
+  }
+  
+  private func showLyricsImportSuccess() {
+    let alert = UIAlertController(
+      title: "Success",
+      message: "Lyrics imported successfully",
+      preferredStyle: .alert
+    )
+    
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
+    present(alert, animated: true)
+  }
+  
+  private func showLyricsImportError(_ error: Error) {
+    let message: String
+    
+    if let lrcError = error as? LRCParserError {
+      message = lrcError.errorDescription ?? "Failed to parse lyrics file"
+    } else if let importError = error as? TranscriptImporterError {
+      message = importError.errorDescription ?? "Failed to import lyrics"
     } else {
       message = error.localizedDescription
     }

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -11,7 +12,7 @@
         <!--Player-->
         <scene sceneID="WN5-qy-PQc">
             <objects>
-                <viewController storyboardIdentifier="PlayerViewController" title="Player" modalPresentationStyle="overFullScreen" id="7nP-Jo-m2x" customClass="PlayerViewController" customModule="BookPlayer" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="PlayerViewController" title="Player" modalPresentationStyle="overFullScreen" id="7nP-Jo-m2x" customClass="PlayerViewController" customModule="BookPlayer" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="tr1-TN-gp4">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -87,13 +88,26 @@
                                                     <constraint firstAttribute="width" secondItem="6xf-bw-kIJ" secondAttribute="height" multiplier="1:1" id="DrQ-Ot-O17"/>
                                                 </constraints>
                                             </view>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="m0F-qD-Fo1" userLabel="Lyrics Button">
+                                                <rect key="frame" x="12" y="12" width="40" height="40"/>
+                                                <color key="backgroundColor" name="WidgetBackground"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="width" constant="40" id="XtZ-2j-tGp"/>
+                                                    <constraint firstAttribute="height" constant="40" id="iA5-zw-17I"/>
+                                                </constraints>
+                                                <color key="tintColor" systemColor="systemBackgroundColor"/>
+                                                <state key="normal" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="plain" image="doc.text" catalog="system"/>
+                                            </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
                                             <constraint firstItem="6xf-bw-kIJ" firstAttribute="centerX" secondItem="feD-iL-N2p" secondAttribute="centerX" id="6Vq-RJ-7rj"/>
+                                            <constraint firstItem="m0F-qD-Fo1" firstAttribute="top" secondItem="feD-iL-N2p" secondAttribute="top" constant="12" id="Nuc-cf-lGd"/>
                                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="6xf-bw-kIJ" secondAttribute="trailing" id="aMp-Jf-zaj"/>
                                             <constraint firstItem="6xf-bw-kIJ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="feD-iL-N2p" secondAttribute="leading" id="axH-hZ-Ix6"/>
                                             <constraint firstAttribute="bottom" secondItem="6xf-bw-kIJ" secondAttribute="bottom" id="ecN-11-0hP"/>
+                                            <constraint firstItem="m0F-qD-Fo1" firstAttribute="leading" secondItem="feD-iL-N2p" secondAttribute="leading" constant="12" id="gDf-8J-sqv"/>
                                             <constraint firstItem="6xf-bw-kIJ" firstAttribute="top" secondItem="feD-iL-N2p" secondAttribute="top" id="waJ-Ji-ZoK"/>
                                         </constraints>
                                     </view>
@@ -318,6 +332,7 @@
                         <outlet property="currentTimeLabel" destination="qcn-Ik-lii" id="LTP-BC-izx"/>
                         <outlet property="forwardIconView" destination="c8f-Jj-P90" id="nGE-Ys-L0i"/>
                         <outlet property="listButton" destination="jGb-7d-wWD" id="awv-aq-6dY"/>
+                        <outlet property="lyricsButton" destination="m0F-qD-Fo1" id="NWs-bv-EQL"/>
                         <outlet property="maxTimeButton" destination="N0N-QP-4aL" id="4KS-sU-tGk"/>
                         <outlet property="moreButton" destination="jrk-yV-8YI" id="gKc-yf-DLH"/>
                         <outlet property="nextChapterButton" destination="A9O-Bo-GTn" id="D9h-wR-k6Q"/>
@@ -341,7 +356,6 @@
             <objects>
                 <navigationController storyboardIdentifier="AppNavigationController" id="wJP-at-zgg" customClass="AppNavigationController" customModule="BookPlayer" customModuleProvider="target" sceneMemberID="viewController">
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" translucent="NO" id="Ll2-cb-4kv">
-                        <rect key="frame" x="0.0" y="96" width="414" height="54"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                 </navigationController>
@@ -353,11 +367,15 @@
     <resources>
         <image name="chevron.left" catalog="system" width="97" height="128"/>
         <image name="chevron.right" catalog="system" width="97" height="128"/>
+        <image name="doc.text" catalog="system" width="115" height="128"/>
         <image name="list.bullet" catalog="system" width="128" height="87"/>
         <image name="maskPlayerClose" width="40" height="14"/>
         <image name="toolbarIconBookmark" width="22" height="26"/>
         <image name="toolbarIconMore" width="24" height="24"/>
         <image name="toolbarIconTimer" width="24" height="24"/>
+        <namedColor name="WidgetBackground">
+            <color red="0.0" green="0.46000000000000002" blue="0.89000000000000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="groupTableViewBackgroundColor">
             <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
@@ -366,6 +384,9 @@
         </systemColor>
         <systemColor name="linkColor">
             <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
     </resources>
 </document>
