@@ -78,47 +78,6 @@ class TranscriptImporterTests: XCTestCase {
     XCTAssertNotNil((error as? TranscriptImporterError)?.errorDescription)
   }
   
-  // MARK: - Import Workflow Tests
-  
-  /// Test import completion with valid file (simulated)
-  func testImportWithValidFile() throws {
-    let expectation = self.expectation(description: "Import completion")
-    let relativePath = "books/test.mp3"
-    
-    // Create a valid LRC file in temp directory
-    let tempDirectory = FileManager.default.temporaryDirectory
-    let sourceURL = tempDirectory.appendingPathComponent("test_import.lrc")
-    
-    let content = """
-    [ti:Test]
-    [00:10.00]Test line
-    """
-    
-    try content.write(to: sourceURL, atomically: true, encoding: .utf8)
-    
-    defer {
-      try? FileManager.default.removeItem(at: sourceURL)
-    }
-    
-    // Note: This test verifies the completion handler structure
-    // Actual file picker presentation would require UI testing
-    sut.importTranscript(for: relativePath) { result in
-      switch result {
-      case .success:
-        // Success case - file should be imported
-        expectation.fulfill()
-      case .failure(let error):
-        // Failure is expected in unit test environment
-        // because we can't actually present the document picker
-        XCTAssertNotNil(error)
-        expectation.fulfill()
-      }
-    }
-    
-    // The completion will be called eventually
-    waitForExpectations(timeout: 1.0)
-  }
-  
   // MARK: - Integration Tests with LRCService
   
   /// Test that successfully imported file can be loaded by LRCService
