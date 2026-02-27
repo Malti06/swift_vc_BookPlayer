@@ -9,6 +9,7 @@
 import Foundation
 import XCTest
 import SwiftUI
+import Combine
 @testable import BookPlayer
 @testable import BookPlayerKit
 
@@ -600,92 +601,6 @@ class TranscriptFeatureUITests: XCTestCase {
     }
   }
   
-  /// Test lyrics button remains visible during alpha transitions
-  /// This test verifies that the lyrics button maintains proper visibility and styling
-  /// even when its parent view (artworkControl) has alpha changes
-  func testLyricsButtonVisibilityDuringAlphaTransitions() throws {
-    // Create a mock artwork control to test the lyrics button behavior
-    let artworkControl = ArtworkControl(frame: CGRect(x: 0, y: 0, width: 300, height: 400))
-    
-    // Force the view to load
-    _ = artworkControl.layer
-    
-    // Create a mock lyrics button to simulate the real one
-    let lyricsButton = UIButton(type: .system)
-    lyricsButton.frame = CGRect(x: 250, y: 20, width: 40, height: 40)
-    
-    // Setup lyrics button with the same styling as in PlayerViewController
-    lyricsButton.layer.cornerRadius = 20
-    lyricsButton.backgroundColor = UIColor.systemBlue
-    lyricsButton.clipsToBounds = false
-    lyricsButton.layer.shadowColor = UIColor.black.cgColor
-    lyricsButton.layer.shadowOpacity = 0.3
-    lyricsButton.layer.shadowRadius = 4.0
-    lyricsButton.layer.shadowOffset = CGSize(width: 0.0, height: 2.0)
-    
-    let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
-    let image = UIImage(systemName: "music.note.list", withConfiguration: config)
-    lyricsButton.setImage(image, for: .normal)
-    lyricsButton.tintColor = .white
-    lyricsButton.isUserInteractionEnabled = true
-    lyricsButton.layer.zPosition = 1000
-    
-    // Add the button to the artwork control
-    artworkControl.addSubview(lyricsButton)
-    
-    // Initial state: artwork control and button are visible
-    XCTAssertEqual(artworkControl.alpha, 1.0, "Artwork control should be fully visible initially")
-    XCTAssertEqual(lyricsButton.alpha, 1.0, 
-                   "Lyrics button should be fully visible initially")
-    
-    // Verify initial button styling
-    XCTAssertEqual(lyricsButton.backgroundColor, UIColor.systemBlue,
-                   "Lyrics button should have blue background initially")
-    XCTAssertEqual(lyricsButton.tintColor, .white,
-                   "Lyrics button icon should be white initially")
-    XCTAssertEqual(lyricsButton.layer.cornerRadius, 20.0,
-                   "Lyrics button should be circular with corner radius 20")
-    
-    // Simulate showing lyrics view by animating artworkControl alpha to 0
-    // This simulates what happens in showLyricsView() method
-    UIView.animate(withDuration: 0.4) {
-      artworkControl.alpha = 0.0
-    }
-    
-    let expectation1 = self.expectation(description: "Wait for animation")
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-      expectation1.fulfill()
-    }
-    wait(for: [expectation1], timeout: 1.0)
-    
-    // BUG CHECK: After animation, artworkControl.alpha becomes 0
-    // This makes the lyrics button invisible too!
-    let artworkAlphaAfterToggle = artworkControl.alpha
-    let buttonAlphaAfterToggle = lyricsButton.alpha
-    
-    // The artwork control is hidden (alpha = 0)
-    XCTAssertEqual(artworkAlphaAfterToggle, 0.0,
-                   "Artwork control alpha is 0 when showing lyrics (this is expected)")
-    
-    // THIS IS THE BUG: The button inherits the parent's alpha value
-    // When artworkControl.alpha = 0, the button becomes invisible even though it should be visible
-    if buttonAlphaAfterToggle == 0.0 {
-      XCTFail("BUG CONFIRMED: Lyrics button alpha is 0 when artworkControl alpha is 0! The button inherits artworkControl's alpha value, making it invisible. The button should remain visible (alpha = 1.0) independently of parent alpha.")
-    } else {
-      // If button has its own alpha, it should be 1.0
-      XCTAssertEqual(buttonAlphaAfterToggle, 1.0,
-                     "Lyrics button should maintain alpha = 1.0 even when parent is hidden")
-    }
-    
-    // Verify button styling is maintained
-    XCTAssertEqual(lyricsButton.backgroundColor, UIColor.systemBlue,
-                   "Lyrics button background should remain blue after alpha change")
-    XCTAssertEqual(lyricsButton.tintColor, .white,
-                   "Icon tint color should remain white after alpha change")
-    XCTAssertEqual(lyricsButton.layer.zPosition, 1000,
-                   "Button should maintain high z-position")
-  }
-  
   /// Test that proves the button's visual invisibility issue
   func testTranscriptButtonEffectiveVisibilityOnTranscriptView() throws {
     let artworkControl = ArtworkControl(frame: CGRect(x: 0, y: 0, width: 300, height: 400))
@@ -748,5 +663,58 @@ class TranscriptFeatureUITests: XCTestCase {
                    "Button should maintain circular shape")
     XCTAssertEqual(artworkControl.transcriptButton.layer.zPosition, 1000,
                    "Button should maintain high z-position")
+  }
+  
+  // MARK: - Lyrics Button Visibility Tests
+  
+  /// Test that lyricsButton in PlayerViewController has blue background on ArtworkView
+  func testLyricsButtonHasBlueBackgroundOnArtworkView() throws {
+    // Create PlayerViewController from storyboard
+    let storyboard = UIStoryboard(name: "Player", bundle: nil)
+    guard let playerVC = storyboard.instantiateViewController(withIdentifier: "PlayerViewController") as? PlayerViewController else {
+      XCTFail("Failed to instantiate PlayerViewController")
+      return
+    }
+    
+    // Setup mock dependencies with proper Combine publishers
+    let mockPlayerManager = PlayerManagerProtocolMock()
+    let mockLibraryService = LibraryServiceProtocolMock()
+    let mockSyncService = SyncServiceProtocolMock()
+    
+    // Configure mock to return proper publishers
+    mockPlayerManager.currentItemPublisherReturnValue = Just(nil).eraseToAnyPublisher()
+    mockPlayerManager.currentSpeedPublisherReturnValue = Just(1.0).eraseToAnyPublisher()
+    mockPlayerManager.isPlayingPublisherReturnValue = Just(false).eraseToAnyPublisher()
+    
+    // Create and assign viewModel
+    let viewModel = PlayerViewModel(
+      playerManager: mockPlayerManager,
+      libraryService: mockLibraryService,
+      syncService: mockSyncService
+    )
+    playerVC.viewModel = viewModel
+    
+    // Load the view - this triggers viewDidLoad and setupLyricsButton
+    _ = playerVC.view
+    
+    // Wait for view setup to complete
+    let expectation = self.expectation(description: "View setup")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+      expectation.fulfill()
+    }
+    wait(for: [expectation], timeout: 1.0)
+    
+    // Verify lyricsButton exists
+    XCTAssertNotNil(playerVC.lyricsButton, "lyricsButton should exist in PlayerViewController")
+    
+    // Test: Check that lyricsButton has blue background
+    XCTAssertEqual(
+      playerVC.lyricsButton.backgroundColor,
+      UIColor.systemBlue,
+      "lyricsButton should have systemBlue background on ArtworkView"
+    )
+    
+    // Verify button is visible
+    XCTAssertFalse(playerVC.lyricsButton.isHidden, "lyricsButton should be visible")
   }
 }
